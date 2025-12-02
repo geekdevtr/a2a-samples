@@ -14,6 +14,7 @@ from a2a.types import (
     TaskStatusUpdateEvent,
 )
 from dotenv import load_dotenv
+from latency_utils import timed
 
 
 load_dotenv()
@@ -43,4 +44,10 @@ class RemoteAgentConnections:
     async def send_message(
         self, message_request: SendMessageRequest
     ) -> SendMessageResponse:
-        return await self.agent_client.send_message(message_request)
+        label = getattr(self.card, "name", "remote-agent")
+
+        result, timing = await timed(
+            label,
+            self.agent_client.send_message(message_request),
+        )
+        return result

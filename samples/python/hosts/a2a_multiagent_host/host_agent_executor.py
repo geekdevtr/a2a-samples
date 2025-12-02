@@ -26,7 +26,7 @@ from traceability_ext import (
     ResponseTrace,
     TraceStep,
 )
-
+import time
 
 if TYPE_CHECKING:
     from google.adk.sessions.session import Session
@@ -190,6 +190,8 @@ class HostAgentExecutor(AgentExecutor):
             context.requested_extensions,
         )
 
+        start = time.perf_counter()
+
         if TRACEABILITY_EXTENSION_URI in context.requested_extensions:
             context.add_activated_extension(TRACEABILITY_EXTENSION_URI)
             logger.debug(
@@ -216,9 +218,13 @@ class HostAgentExecutor(AgentExecutor):
             ),
             context.context_id,
             updater,
-            # traceability=traceability,
             response_trace=response_trace,
         )
+
+        end = time.perf_counter()
+        total_ms = (end - start) * 1000.0
+        print(f"[JSONRPC][WORKFLOW] end-to-end latency: {total_ms:.2f} ms")
+
         logger.debug('[host_agent] execute exiting')
 
     async def cancel(self, context: RequestContext, event_queue: EventQueue):

@@ -1,0 +1,29 @@
+import asyncio
+import uuid
+
+from a2a.client import ClientConfig, ClientFactory, minimal_agent_card
+from a2a.types import Message, Role, TextPart
+
+
+async def main():
+    # Point the client to the REST endpoint of your dice agent
+    factory = ClientFactory(ClientConfig())
+    client = factory.create(
+        minimal_agent_card("http://localhost:10101/a2a/v1")
+    )
+
+    msg = Message(
+        kind="message",
+        role=Role.user,
+        message_id=uuid.uuid4().hex,
+        parts=[TextPart(text="Roll a 10-sided die and tell me if it is prime")],
+    )
+
+    print("Sending request to dice_agent_rest…")
+    async for event in client.send_message(msg):
+        print("EVENT:", type(event).__name__, event)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+
