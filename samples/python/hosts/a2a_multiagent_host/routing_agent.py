@@ -376,10 +376,8 @@ def _get_initialized_routing_agent_sync() -> Agent:
     async def _async_main() -> Agent:
         routing_agent_instance = await RoutingAgent.create(
             remote_agent_addresses=[
-                # You can still configure remote agents via env if you want
-                os.getenv("AIR_AGENT_URL", "http://localhost:10011"),
-                os.getenv("WEA_AGENT_URL", "http://localhost:10012"),
-                os.getenv("ANALYTICS_AGENT_URL", "http://localhost:10013"),
+                # Single analytics / summarisation agent
+                os.getenv('ANALYTICS_AGENT_URL', 'http://localhost:10011'),
             ]
         )
         return routing_agent_instance.create_agent()

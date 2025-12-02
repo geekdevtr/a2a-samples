@@ -35,18 +35,29 @@ def main(host, port):
     try:
         capabilities = AgentCapabilities(streaming=False)
         skill = AgentSkill(
-            id='chart_generator',
-            name='Chart Generator',
-            description='Generate a chart based on CSV-like data passed in',
-            tags=['generate image', 'edit image'],
+            id='text_analytics',
+            name='Text Analytics',
+            description=(
+                "Summarise and analyse business text (for example Central "
+                "Procurement Committee updates) into short, concise outputs."
+            ),
+            tags=['analytics', 'summarisation', 'text'],
             examples=[
-                'Generate a chart of revenue: Jan,$1000 Feb,$2000 Mar,$1500'
+                (
+                    'Summarise this business update in 2–3 sentences and give the '
+                    'overall tone as a single word: '
+                    '"The Central Procurement Committee has reviewed 42 high-value '
+                    'proposals this quarter..."'
+                ),
             ],
         )
 
         agent_card = AgentCard(
-            name='Chart Generator Agent',
-            description='Generate charts from structured CSV-like data input.',
+            name='Analytics Agent',  # IMPORTANT: must match what the router uses
+            description=(
+                'Fast text analytics / summarisation agent for business updates '
+                'and other short texts.'
+            ),
             url=f'http://{host}:{port}/',
             version='1.0.0',
             default_input_modes=ChartGenerationAgent.SUPPORTED_CONTENT_TYPES,
