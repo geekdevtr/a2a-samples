@@ -170,7 +170,7 @@ from typing import Any
 from uuid import uuid4
 
 from dotenv import load_dotenv
-import openai
+from google import genai
 
 load_dotenv()
 
@@ -179,10 +179,10 @@ logger = logging.getLogger(__name__)
 
 class ChartGenerationAgent:
     """
-    Simple LLM-powered text analytics agent.
+    Simple LLM-powered text analytics agent using Gemini.
 
     For this experiment the agent only does text summarisation.
-    It calls OpenAI's GPT-style model and always returns a plain
+    It calls Google's Gemini model and always returns a plain
     text summary (no JSON, no images, no binary data).
     """
 
@@ -190,15 +190,16 @@ class ChartGenerationAgent:
     SUPPORTED_CONTENT_TYPES = ["text", "text/plain"]
 
     def __init__(self):
-        api_key = os.getenv("OPENAI_API_KEY")
+        api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
         if not api_key:
             raise RuntimeError(
-                "OPENAI_API_KEY is not set. Please add it to your environment or .env file."
+                "GEMINI_API_KEY or GOOGLE_API_KEY is not set. "
+                "Please add one of them to your environment or .env file."
             )
 
-        openai.api_key = api_key
-        # You can override this via OPENAI_MODEL in .env if you want
-        self.model = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
+        self.client = genai.Client(api_key=api_key)
+        # You can override this via GEMINI_MODEL in .env if you want
+        self.model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
     def invoke(self, query: str, session_id: str | None = None) -> str:
         """
@@ -213,8 +214,6 @@ class ChartGenerationAgent:
             query,
         )
 
-        # You can keep your JSON instructions in the *host* prompt if you want.
-        # Here we keep it very simple to avoid parsing issues.
         prompt = (
             "You are a fast, lightweight summarisation model used for latency testing.\n"
             "Summarise the user's text in 2–3 concise sentences, preserving the key points.\n"
@@ -223,20 +222,19 @@ class ChartGenerationAgent:
         )
 
         try:
-            resp = openai.ChatCompletion.create(
+            resp = self.client.models.generate_content(
                 model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.2,
+                contents=prompt,
             )
         except Exception as e:
-            logger.exception("Error while calling OpenAI")
+            logger.exception("Error while calling Gemini")
             return f"Summarisation failed: {e}"
 
-        try:
-            summary = resp["choices"][0]["message"]["content"].strip()
-        except Exception as e:
-            logger.exception("Error extracting text from OpenAI response")
-            return f"Summarisation failed: could not parse model response ({e})"
+        # google-genai response has a .text convenience property
+        summary = (getattr(resp, "text", "") or "").strip()
+        if not summary:
+            logger.error("Empty response from Gemini")
+            return "Summarisation failed: empty response from model."
 
         logger.info("[TextAnalyticsAgent.invoke] summary=%s", summary)
         return summary

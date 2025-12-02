@@ -235,13 +235,19 @@ Available remote agents (name + description):
         task: str,
         tool_context: ToolContext,
     ):
-        """Sends a task to a remote or local analytics agent.
+        """Sends a task to a remote or local analytics agent."""
+        # 🔹 Lazy init / retry: if no remote agents are registered, try to discover them now
+        if not self.remote_agent_connections:
+            logger.debug(
+                "[RoutingAgent] No remote agents registered yet; "
+                "attempting lazy discovery from environment."
+            )
+            await self._async_init_components(
+                [
+                    os.getenv("ANALYTICS_AGENT_URL", "http://localhost:10011"),
+                ]
+            )
 
-        If remote A2A agents are configured and available, this will send the
-        message to the chosen remote agent. If no remote agents are available,
-        it falls back to a **local Gemini-powered analytics agent** that performs
-        text summarisation and returns JSON.
-        """
         # Debug logging so you can see what's going on
         print("[RoutingAgent] send_message called with agent_name:", agent_name)
         print(
